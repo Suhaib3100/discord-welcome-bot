@@ -1,3 +1,5 @@
+from flask import Flask
+from threading import Thread
 import os
 import discord
 from discord.ext import commands
@@ -6,13 +8,15 @@ import requests
 from io import BytesIO
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
+
 # Create the output folder if it doesn't exist
 if not os.path.exists('output'):
     os.makedirs('output')
 
 # Replace with your bot token
-TOKEN =os.getenv('DISCORD_TOKEN')
+TOKEN = os.getenv('DISCORD_TOKEN')
 
 # Replace with your welcome channel ID
 WELCOME_CHANNEL_ID = 1210950555929939988
@@ -36,6 +40,20 @@ SHADOW_OFFSET = 10  # Increased shadow offset
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+# Keep-alive Flask app
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
 
 @bot.event
 async def on_ready():
@@ -214,4 +232,8 @@ async def get_inviter(member):
         print("Bot does not have permission to view audit logs.")  # Debugging: Print if permissions are missing
     return None
 
+# Start the keep-alive server
+keep_alive()
+
+# Run the bot
 bot.run(TOKEN)
